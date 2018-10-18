@@ -25,6 +25,10 @@
 
 #include <errno.h>
 
+#include <stdbool.h>
+
+#include <net/if.h>
+
 #define MAX_WAIT_TIME   1
 
 #define MAX_NO_PACKETS  1
@@ -33,7 +37,11 @@
 
 #define PACKET_SIZE     4096
 
-struct timeval tvsend,tvrecv;	
+#define TRUE  1
+
+#define FALSE 0
+
+struct timeval tvsend,tvrecv,IoWaitTime;	
 
 struct sockaddr_in dest_addr,recv_addr;
 
@@ -103,7 +111,7 @@ bool NetIsOk()
 
 		printf("[NetStatus]  error : Can't get serverhost info!\n");
 
-		return false;
+		return FALSE;
 
 	}
 
@@ -113,7 +121,7 @@ bool NetIsOk()
 
 #else //如果不使用域名，则只能用ip地址直接发送icmp包，例如谷歌的地址：8.8.8.8
 
-	dest_addr.sin_addr.s_addr = inet_addr("8.8.8.8");
+	dest_addr.sin_addr.s_addr = inet_addr("202.108.22.5");
 
 #endif
 
@@ -127,11 +135,29 @@ bool NetIsOk()
 
 		printf("[NetStatus]  error : socket");
 
-		return false;
+		return FALSE;
 
 	}
 
- 
+	//struct sockaddr_in localaddr;
+
+	//localaddr.sin_family = AF_INET;
+
+	//localaddr.sin_addr.s_addr = inet_addr("192.168.10.210");
+
+	//localaddr.sin_port = 0;  //local port
+
+	//bind(sockfd, (struct sockaddr *)&localaddr, sizeof(localaddr));
+
+	//connect(sockfd, (struct sockaddr *)&localaddr, sizeof(localaddr));
+	
+	struct ifreq Netinterface;
+
+	strncpy(Netinterface.ifr_ifrn.ifrn_name,"eth0",sizeof("eth0"));
+
+	if(setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, (char *)&Netinterface, sizeof(Netinterface))< 0)
+
+		perror("SO_BINDTODEVICE failed");
 
 	int iFlag;
 
@@ -143,11 +169,11 @@ bool NetIsOk()
 
 		_CloseSocket();
 
-		return false;
+		return FALSE;
 
 	}
 
-	iFlag |= O_NONBLOCK;
+	iFlag |= O_NONBLOCK;   //设置为非阻塞型
 
 	if(iFlag = fcntl(sockfd,F_SETFL,iFlag)<0)
 
@@ -157,7 +183,7 @@ bool NetIsOk()
 
 		_CloseSocket();
 
-		return false;
+		return FALSE;
 
 	}
 
@@ -179,7 +205,7 @@ bool NetIsOk()
 
 			_CloseSocket();
 
-			return false;
+			return FALSE;
 
 		}	
 
@@ -191,7 +217,7 @@ bool NetIsOk()
 
 			_CloseSocket();
 
-			return true;
+			return TRUE;
 
 		}
 
@@ -201,7 +227,7 @@ bool NetIsOk()
 
 	_CloseSocket();     	
 
-	return false;
+	return FALSE;
 
 }
 
@@ -329,13 +355,15 @@ int recv_packet(int pkt_no,char *recvpacket)
 
 	int n,fromlen;
 
+	//struct timeval IoWaitTime = {0, 500000};
+
 	fd_set rfds;
 
 	FD_ZERO(&rfds);
 
 	FD_SET(sockfd,&rfds);
 
-	signal(SIGALRM,timeout);
+        signal(SIGALRM,timeout);
 
 	fromlen=sizeof(recv_addr);
 
@@ -344,6 +372,8 @@ int recv_packet(int pkt_no,char *recvpacket)
 	while(1)
 
 	{
+
+		//struct timeval IoWaitTime = {0, 5};
 
 		select(sockfd+1, &rfds, NULL, NULL, NULL);
 
@@ -452,5 +482,26 @@ void _CloseSocket()
 	close(sockfd);
 
 	sockfd = 0;
+
+}
+
+
+int main()
+
+{
+
+	int Net_Flag;
+
+	Net_Flag = NetIsOk();
+
+	if(Net_Flag==TRUE)
+
+		printf("The RaspberryPi is connected to the Internet!\n");
+
+	else if(Net_Flag==FALSE)
+
+		printf("The RaspberryPi isn't connected to the Internet!\n");
+
+	return 0;
 
 }
