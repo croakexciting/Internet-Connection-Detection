@@ -75,7 +75,7 @@ void _CloseSocket();
 
  
 
-bool NetIsOk()
+bool NetIsOk((char *)Interface_name)
 
 {     
 
@@ -153,7 +153,7 @@ bool NetIsOk()
 	
 	struct ifreq Netinterface;
 
-	strncpy(Netinterface.ifr_ifrn.ifrn_name,"eth0",sizeof("eth0"));
+	strncpy(Netinterface.ifr_ifrn.ifrn_name,Interface_name,sizeof(Interface_name));
 
 	if(setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, (char *)&Netinterface, sizeof(Netinterface))< 0)
 
@@ -490,17 +490,29 @@ int main()
 
 {
 
-	int Net_Flag;
+	int eth0_Flag;
+	
+	int wlan0_Flag
 
-	Net_Flag = NetIsOk();
+	eth0_Flag = NetIsOk("eth0");
+	
+	wlan0_Flag = NetIsOk("wlan0")
 
-	if(Net_Flag==TRUE)
+	if(eth0_Flag==TRUE)
 
-		printf("The RaspberryPi is connected to the Internet!\n");
+		printf("The eth0 is connected to the Internet!\n");
 
-	else if(Net_Flag==FALSE)
+	else if(eth0_Flag==FALSE)
 
-		printf("The RaspberryPi isn't connected to the Internet!\n");
+		printf("The eth0 isn't connected to the Internet!\n");
+	
+	if(wlan0_Flag==TRUE)
+
+		printf("The wlan0 is connected to the Internet!\n");
+
+	else if(wlan0_Flag==FALSE)
+
+		printf("The wlan0 isn't connected to the Internet!\n");
 
 	return 0;
 
