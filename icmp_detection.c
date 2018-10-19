@@ -41,7 +41,7 @@
 
 #define FALSE 0
 
-struct timeval tvsend,tvrecv,IoWaitTime;	
+struct timeval tvsend,tvrecv;	
 
 struct sockaddr_in dest_addr,recv_addr;
 
@@ -75,7 +75,7 @@ void _CloseSocket();
 
  
 
-bool NetIsOk((char *)Interface_name)
+bool NetIsOk((char *)interface_name)
 
 {     
 
@@ -119,7 +119,7 @@ bool NetIsOk((char *)Interface_name)
 
 	bcopy((char*)host->h_addr,(char*)&dest_addr.sin_addr,host->h_length);
 
-#else //如果不使用域名，则只能用ip地址直接发送icmp包，例如谷歌的地址：8.8.8.8
+#else //如果不使用域名，则只能用ip地址直接发送icmp包，例如百度的地址: 202.108.22.5
 
 	dest_addr.sin_addr.s_addr = inet_addr("202.108.22.5");
 
@@ -153,7 +153,7 @@ bool NetIsOk((char *)Interface_name)
 	
 	struct ifreq Netinterface;
 
-	strncpy(Netinterface.ifr_ifrn.ifrn_name,Interface_name,sizeof(Interface_name));
+	strncpy(Netinterface.ifr_ifrn.ifrn_name,interface_name,(strlen(Interface_name)+1));
 
 	if(setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, (char *)&Netinterface, sizeof(Netinterface))< 0)
 
@@ -492,11 +492,15 @@ int main()
 
 	int eth0_Flag;
 	
-	int wlan0_Flag
-
-	eth0_Flag = NetIsOk("eth0");
+	int eth1_Flag;
 	
-	wlan0_Flag = NetIsOk("wlan0")
+	char *interface_name_1 = "eth0";
+	
+	char *interface_name_2 = "eth1";
+
+	eth0_Flag = NetIsOk(interface_name_1);
+	
+	eth1_Flag = NetIsOk(interface_name_2);
 
 	if(eth0_Flag==TRUE)
 
@@ -506,13 +510,13 @@ int main()
 
 		printf("The eth0 isn't connected to the Internet!\n");
 	
-	if(wlan0_Flag==TRUE)
+	if(eth1_Flag==TRUE)
 
-		printf("The wlan0 is connected to the Internet!\n");
+		printf("The eth1 is connected to the Internet!\n");
 
-	else if(wlan0_Flag==FALSE)
+	else if(eth1_Flag==FALSE)
 
-		printf("The wlan0 isn't connected to the Internet!\n");
+		printf("The eth1 isn't connected to the Internet!\n");
 
 	return 0;
 
